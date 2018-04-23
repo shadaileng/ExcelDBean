@@ -60,10 +60,13 @@ public class Table {
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer("Table [id=" + id + ", packageName=" + packageName + ", tableName=" + tableName + ", tableName_zhCN="
-				+ tableName_zhCN + ", tableDesc=" + tableDesc + "]\n");
+				+ tableName_zhCN + ", tableDesc=" + tableDesc + "]");
 		
-		for(Map.Entry<String, Column> entry : columns.entrySet()){
-			buf.append("  " + entry.getKey() + ": " + entry.getValue() + "\n");
+		if(columns != null) {
+			buf.append("\n");
+			for(Map.Entry<String, Column> entry : columns.entrySet()){
+				buf.append("  " + entry.getKey() + ": " + entry.getValue() + "\n");
+			}
 		}
 		
 		return buf.toString();
