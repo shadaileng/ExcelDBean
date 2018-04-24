@@ -8,5 +8,6 @@
   <modules>
     <module>Excel</module>
     <module>Entity</module>
+    <module>JavaCode</module>
   </modules>
 </project>
