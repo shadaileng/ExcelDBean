@@ -2,6 +2,7 @@ package com.qpf.excel;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -31,7 +32,7 @@ public class ExcelHelper {
 			Sheet sheet_tmp = sheets[i];
 			String tableName = $(sheet_tmp.getRow(1), 0);
 			logger.info(tableName);
-			Map<String, Column> columns = new HashMap<String, Column>();
+			Map<String, Column> columns = new LinkedHashMap<String, Column>();
 			for(int j = 2, k = sheet_tmp.getRows(); j < k; j ++) {
 				String columnName = $(sheet_tmp.getRow(j), 1);
 				Column column = new Column(tableName, columnName , $(sheet_tmp.getRow(j), 2), $(sheet_tmp.getRow(j), 3), $(sheet_tmp.getRow(j), 4), $(sheet_tmp.getRow(j), 5), $(sheet_tmp.getRow(j), 6));

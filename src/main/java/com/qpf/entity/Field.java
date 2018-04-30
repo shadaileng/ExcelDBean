@@ -1,5 +1,7 @@
 package com.qpf.entity;
 
+import com.qpf.code.JavaCodeHelper;
+
 public class Field {
 	private String modify;
 	private String type;
@@ -38,7 +40,7 @@ public class Field {
 		this.init = init;
 	}
 	public String getResult() {
-		result = modify + " " + type + " " + fieldName;
+		result = modify + " " + JavaCodeHelper.simpleType(type) + " " + fieldName;
 		if(init != null && !"".equals(init)){
 			result += " = " + init;
 		}

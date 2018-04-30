@@ -1,5 +1,9 @@
 package com.qpf.code;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -8,6 +12,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.qpf.entity.Field;
+import com.qpf.entity.Method;
 
 public class JavaCode {
 	private String packageName;
@@ -18,8 +23,8 @@ public class JavaCode {
 	private boolean isInterface;
 	private List<String> interfaces;
 	private String subClassName;
-	private List<Field> fields;
-	private Map<String, String> methods;
+	private Map<String, Field> fields;
+	private Map<String, Method> methods;
 	private static Logger logger = Logger.getLogger(JavaCode.class);
 	private int indent;
 //	private final String NEWLINE = "\n";
@@ -33,15 +38,15 @@ public class JavaCode {
 		subClassName = "";
 		isInterface = false;
 		interfaces = new ArrayList<String>();
-		fields = new ArrayList<Field>();
-		methods = new LinkedHashMap<String, String>();
+		fields = new LinkedHashMap<String, Field>();
+		methods = new LinkedHashMap<String, Method>();
 		indent = 0;
 	}
 	public JavaCode(String className, boolean isInterface, String desc){
 		this();
 		String[] package_class = splitFullClassName(className);
 		this.packageName = package_class[0];
-		this.className = package_class[1];
+		this.className = firstUpper(package_class[1]);
 		this.isInterface = isInterface;
 		this.desc4Class = desc;
 	}
@@ -51,26 +56,70 @@ public class JavaCode {
 	 * @param className
 	 */
 	public void importPackage(String className){
-		logger.info("import: " + className);
 		if(isNotEmpty(this.packageName)){
 			if(className.indexOf("java.lang") == -1 && className.indexOf(this.packageName) == -1 && this.importPackage.indexOf(className) == -1){
+				logger.info("import: " + className);
 				this.importPackage.add(className);
 			}
 		}else{
 			if(className.indexOf("java.lang") == -1 && className.indexOf(".") != -1 && this.importPackage.indexOf(className) == -1){
+				logger.info("import: " + className);
 				this.importPackage.add(className);
 			}
 		}
 	}
 	
 	/**
-	 * 添加注解
+	 * 导入范型
+	 * @param type
+	 */
+	public void importGenericity(String type) {
+		if(type.contains("<")) {
+			int begin = type.indexOf("<");
+			int end = type.indexOf(">");
+			String type_ = type.substring(0, begin);
+			if(!importPackage.contains(type_)) {
+				importPackage(type_);
+				importGenericity(type.substring(begin + 1, end));
+			}
+		}else {
+			if(!importPackage.contains(type)) {
+				importPackage(type);
+			}
+		}
+	}
+	
+	/**
+	 * 添加注解，注解全类名解析
 	 * @param annotation
 	 */
 	public void addAnnotation(String annotation){
 		if(isNotEmpty(annotation)){
-			importPackage(annotation);
-			annotations.add(annotation);
+			String buf = "";
+			if(annotation.contains("(")) {
+				int begin = annotation.indexOf("(");
+				int end = annotation.lastIndexOf(")");
+				String fullAnnotation = annotation.substring(0, begin);
+				importPackage(fullAnnotation);
+				buf += JavaCodeHelper.simpleType(fullAnnotation) + "(";
+				String tmp = annotation.substring(begin + 1, end);
+				while(begin > 0) {
+					begin = tmp.indexOf(".class");
+					if(begin > 0) {
+						int begin_ = tmp.substring(0, begin).lastIndexOf("=");
+						importPackage(tmp.substring(begin_ + 1, begin).trim());
+						buf += tmp.substring(0, begin_ + 1) + " " + JavaCodeHelper.simpleType(tmp.substring(begin_ + 1, begin)) + ".class";
+						tmp = tmp.substring(begin + 6);
+						begin = end;
+					}else {
+						buf += tmp;
+					}
+				}
+				buf += ")";
+			}else {
+				importPackage(annotation);
+			}
+			annotations.add(buf);
 		}
 	}
 	
@@ -97,7 +146,6 @@ public class JavaCode {
 			interfaces.add(splitFullClassName(interfaceName)[1]);
 		}
 	}
-	
 
 	/**
 	 * 定义属性
@@ -108,11 +156,12 @@ public class JavaCode {
 	public void addFields(String modify, String type, String fieldName, String init){
 		logger.info("add field: " + type + " " + fieldName + " = " + init);
 		if(isNotEmpty(fieldName) && isNotEmpty(type)){
-			importPackage(type);
+			importGenericity(type);
+
 			Field field = new Field(modify, type, fieldName, init);
 			String result = field.getResult();
 			logger.info("field: " + result);
-			this.fields.add(field);
+			this.fields.put(field.getFieldName(), field);
 		}
 	}
 	
@@ -121,68 +170,80 @@ public class JavaCode {
 	 * @param methodDefine  函数声明
 	 * @param body          函数体
 	 */
-	public void addmethod(String methodDefine, String body){
-		this.methods.put(methodDefine, body);
+	public void addmethod(String name, Method method){
+		if(!"void".equals(method.getType()) && !className.equals(method.getType())) {
+			importGenericity(method.getType());
+		}
+
+		Map<String, Field> paramList = method.getParams();
+		if(paramList != null &&  paramList.size() > 0) {
+			for(Field field : paramList.values()) {
+				importGenericity(field.getType());
+			}
+		}
+		this.methods.put(name, method);
 	}
 	
 	/**
 	 * 添加构造函数
 	 */
 	public void addConstructor(){
-		String methodDefine = "public " + className + " ()";
+		Method method = new Method("public", "", className, null);
 		String methodBody = "{" + newLine(1) + "super();" + newLine(-1) + "}" + newLine(0);
-		addmethod(methodDefine, methodBody);
+		method.setBody(methodBody);
+		addmethod(className, method);
 		
-		methodDefine = "public " + className + " (";
+		method = new Method("public", "", className, fields);
 		StringBuffer buf = new StringBuffer();
-		for(Field field : fields){
-			buf.append(field.getType() + " " + field.getFieldName() + ", ");
-		}
-		methodDefine += buf.toString();
-		methodDefine = methodDefine.substring(0, methodDefine.lastIndexOf(","));
-		methodDefine += ")";
 		methodBody = "{" + newLine(1);
 		buf = new StringBuffer();
-		for(Field field : fields){
+		for(Field field : fields.values()){
 			buf.append("this." + field.getFieldName() + " = " + field.getFieldName() + ";" + newLine(0));
 		}
-		methodBody += buf.toString() + newLine(-1) + "}" + newLine(0);
-		addmethod(methodDefine, methodBody);
+		methodBody += buf.toString() + newLine(-1) + "}";
+		method.setBody(methodBody);
+		addmethod(className, method);
 	}
 	
 	/**
 	 * 添加getter和setter
 	 */
 	public void addGetterAndSetter(){
-		for(Field field : fields){
+		for(Field field : fields.values()){
 			String name = field.getFieldName();
-			String type = field.getType();
-			String methodDefine = "";
+			String type = JavaCodeHelper.simpleType(field.getType());
 			String methodBody = "";
 			if(name.indexOf("is") == 0){
-				methodDefine = "public " + type + name + " ()";
-				methodBody = "{" + newLine(1) + "return this." + name + newLine(-1) + "}" + newLine(0);
-				addmethod(methodDefine, methodBody);
-				methodDefine = "public " + type + " set" + name.substring(2) + " (" + type + " " + name + ")";
-				methodBody = "{" + newLine(1) + "this." + name + " = " + name + ";" + newLine(-1) + "}" + newLine(0);
+				Method method = new Method("public", type, name, null);
+				methodBody = "{" + newLine(1) + "return this." + name + newLine(-1) + "}";
+				method.setBody(methodBody);
+				addmethod(name, method);
+				Map<String, Field> fieldTmp = new LinkedHashMap<String, Field>();
+				fieldTmp.put(name, new Field("", type, name, ""));
+				method = new Method("public", type, "set" + name.substring(2), fieldTmp);
+				methodBody = "{" + newLine(1) + "this." + name + " = " + name + ";" + newLine(-1) + "}";
+				method.setBody(methodBody);
+				addmethod(method.getName(), method);
 			}else{
-				methodDefine = "public " + type + " get" + firstUpper(name) + " ()";
-				methodBody = "{" + newLine(1) + "return this." + name + newLine(-1) + "}" + newLine(0);
-				addmethod(methodDefine, methodBody);
-				methodDefine = "public " + type + " set" + firstUpper(name) + " (" + type + " " + name + ")";
-				methodBody = "{" + newLine(1) + "this." + name + " = " + name + ";" + newLine(-1) + "}" + newLine(0);
+				Method method = new Method("public", type, "get" + firstUpper(name), null);
+				methodBody = "{" + newLine(1) + "return this." + name + newLine(-1) + "}";
+				method.setBody(methodBody);
+				addmethod(method.getName(), method);
+				Map<String, Field> fieldTmp = new LinkedHashMap<String, Field>();
+				fieldTmp.put(name, new Field("", type, name, ""));
+				
+				method = new Method("public", type, "set" + firstUpper(name), fieldTmp);
+				methodBody = "{" + newLine(1) + "this." + name + " = " + name + ";" + newLine(-1) + "}";
+				method.setBody(methodBody);
+				addmethod(method.getName(), method);
 			}
-			if(!"".equals(methodDefine)){
-				methods.put(methodDefine, methodBody);
-			}
-			
 		}
 	}
 	
 	/**
 	 * 构建实体类文本
 	 */
-	public void build(){
+	public String build(){
 		StringBuffer buf = new StringBuffer();
 		// 包名
 		if(isNotEmpty(this.packageName)){
@@ -223,7 +284,7 @@ public class JavaCode {
 		buf.append(" {" + newLine(1));
 		
 		// 定义属性
-		for(Field field : fields){
+		for(Field field : fields.values()){
 			buf.append(field.getResult() + newLine(0));
 		}
 		
@@ -233,17 +294,49 @@ public class JavaCode {
 		//getter & setter
 		addGetterAndSetter();
 		
-		for(Map.Entry<String, String> entry : methods.entrySet()){
-			buf.append(entry.getKey() + entry.getValue());
+		for(Method method : methods.values()){
+			List<String> packages = method.getImports();
+			for(String imports : packages) {
+				importPackage(imports);
+			}
+			// 函数注解
+			List<String> annotation = method.getAnnotations();
+			for(String str : annotation){
+				buf.append("@" + str + newLine(0));
+			}
+			if(!isInterface){
+				buf.append(method.getDefine() + method.getBody());
+			}else {
+				buf.append(method.getDefine() + ";");
+			}
+			buf.append(newLine(0));
 		}
-		
-		
 		
 		buf.append(newLine(-1) + "}");
 		
-		System.out.println(buf.toString());
+		return buf.toString();
 	}
-	
+	public void build(String path) {
+		File dir = new File(path + "/" + packageName.replace(".", "/"));
+		if(!dir.exists()) {
+			dir.mkdirs();
+		}
+		File file = new File(dir, className + ".java");
+		try {
+			if(!file.exists()) {
+					file.createNewFile();
+			}
+			logger.info("file: " + file.getPath());
+			String charset = "utf-8";
+			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), charset ));
+			String buf = build();
+			bw.write(buf);
+			bw.flush();
+			bw.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 	
 	public String[] splitFullClassName(String className){
 		if(isNotEmpty(className)){
@@ -266,7 +359,6 @@ public class JavaCode {
 		for(int i = 0; i < indent; i++){
 			newline += "\t";
 		}
-//		System.out.println(indent);
 		return newline;
 	}
 	

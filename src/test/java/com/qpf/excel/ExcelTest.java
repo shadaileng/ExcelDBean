@@ -18,7 +18,7 @@ public class ExcelTest {
 		Map<String, Table> tables = ExcelHelper.getAllTable(new File(resource.getFile()));
 		for(Map.Entry<String, Table> entry : tables.entrySet()) {
 			Table table = entry.getValue();
-			JavaCodeHelper.buildJavaCodeByTable(table);
+			JavaCodeHelper.buildJavaCodeByTable(table, System.getProperty("user.dir"));
 		}
 		
 		
