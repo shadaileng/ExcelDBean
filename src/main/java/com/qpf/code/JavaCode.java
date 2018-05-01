@@ -50,12 +50,17 @@ public class JavaCode {
 		this.isInterface = isInterface;
 		this.desc4Class = desc;
 	}
-	
+	public String getClassName() {
+		return className;
+	}
 	/**
 	 * 根据全类名导入该类型
 	 * @param className
 	 */
 	public void importPackage(String className){
+		if(!className.contains(".")) {
+			return;
+		}
 		if(isNotEmpty(this.packageName)){
 			if(className.indexOf("java.lang") == -1 && className.indexOf(this.packageName) == -1 && this.importPackage.indexOf(className) == -1){
 				logger.info("import: " + className);
@@ -76,7 +81,7 @@ public class JavaCode {
 	public void importGenericity(String type) {
 		if(type.contains("<")) {
 			int begin = type.indexOf("<");
-			int end = type.indexOf(">");
+			int end = type.lastIndexOf(">");
 			String type_ = type.substring(0, begin);
 			if(!importPackage.contains(type_)) {
 				importPackage(type_);
@@ -157,6 +162,9 @@ public class JavaCode {
 		logger.info("add field: " + type + " " + fieldName + " = " + init);
 		if(isNotEmpty(fieldName) && isNotEmpty(type)){
 			importGenericity(type);
+			if(init != null && init.indexOf(" ") > 0 && init.indexOf("(") > 0) {
+				importGenericity(init.substring(init.indexOf(" ") + 1, init.indexOf("(")));
+			}
 
 			Field field = new Field(modify, type, fieldName, init);
 			String result = field.getResult();
@@ -205,6 +213,13 @@ public class JavaCode {
 		addmethod(className, method);
 	}
 	
+	public void addConstructor(Method method) {
+		if(!className.equals(method.getName())){
+			return ;
+		}
+		addmethod(className, method);
+	}
+	
 	/**
 	 * 添加getter和setter
 	 */
@@ -250,6 +265,15 @@ public class JavaCode {
 			buf.append("package " + packageName + ";" + newLine(0));
 		}
 		// 导入包
+		/**
+		 * 导入包之前遍历函数，添加函数需要的包
+		 */
+		for(Method method : methods.values()){
+			List<String> packages = method.getImports();
+			for(String imports : packages) {
+				importGenericity(imports);
+			}
+		}
 		for(String packages : importPackage){
 			buf.append("import " + packages + ";" + newLine(0));
 		}
@@ -289,16 +313,14 @@ public class JavaCode {
 		}
 		
 		// 构造函数
-		addConstructor();
+//		if(!isInterface){
+//			addConstructor();
+//		}
 		
 		//getter & setter
-		addGetterAndSetter();
+//		addGetterAndSetter();
 		
 		for(Method method : methods.values()){
-			List<String> packages = method.getImports();
-			for(String imports : packages) {
-				importPackage(imports);
-			}
 			// 函数注解
 			List<String> annotation = method.getAnnotations();
 			for(String str : annotation){
@@ -362,7 +384,7 @@ public class JavaCode {
 		return newline;
 	}
 	
-	public String firstUpper(String fieldName){
+	public static String firstUpper(String fieldName){
 		return fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
 	}
 	@Override

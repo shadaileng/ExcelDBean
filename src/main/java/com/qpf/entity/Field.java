@@ -8,6 +8,7 @@ public class Field {
 	private String fieldName;
 	private String init;
 	private String result;
+	private String annotation;
 	public Field(String modify, String type, String fieldName, String init) {
 		super();
 		this.modify = modify;
@@ -42,10 +43,16 @@ public class Field {
 	public String getResult() {
 		result = modify + " " + JavaCodeHelper.simpleType(type) + " " + fieldName;
 		if(init != null && !"".equals(init)){
-			result += " = " + init;
+			result += " = new " + JavaCodeHelper.simpleType(init);
 		}
 		result += ";";
 		return result;
+	}
+	public String getAnnotation() {
+		return annotation;
+	}
+	public void setAnnotation(String annotation) {
+		this.annotation = annotation;
 	}
 	@Override
 	public String toString() {

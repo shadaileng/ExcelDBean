@@ -56,18 +56,31 @@ public class Method {
 	}
 	public void addParams(Field params) {
 		this.params.put(params.getFieldName(), params);
+		getDefine();
 	}
 	public String getDefine() {
-		define += modify + " ";
+		
+		define = modify + " ";
 		
 		if(!"".equals(type)) {
-			define += type + " ";
+			if(!imports.contains(type)) {
+				imports.add(type);
+			}
+			define += JavaCodeHelper.simpleType(type) + " ";
 		}
 		
 		define += name + " (";
 		
 		String buf = "";
 		for(Field field : params.values()) {
+			if(field.getAnnotation() != null && !"".equals(field.getAnnotation())) {
+				String annotation = field.getAnnotation();
+				String fullAnnotation = annotation.substring(0, (annotation.indexOf("(") > 0 ? annotation.indexOf("(") : annotation.length()));
+				if(!imports.contains(fullAnnotation)) {
+					imports.add(fullAnnotation);
+				}
+				buf += "@" + JavaCodeHelper.simpleType(annotation) + " ";
+			}
 			buf += JavaCodeHelper.simpleType(field.getType()) + " " + field.getFieldName() + ", ";
 		}
 		if(!"".equals(buf)) {
