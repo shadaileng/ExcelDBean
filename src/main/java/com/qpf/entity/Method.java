@@ -9,22 +9,22 @@ import com.qpf.code.JavaCodeHelper;
 
 public class Method {
 	private String define;
-	private String body;
 	private String modify;
 	private String type;
 	private String name;
 	private Map<String, Field> params;
 	private List<String> annotations;
 	private List<String> imports;
+	private MethodBody body;
 	public Method() {
 		define = "";
-		body = "";
 		modify = "";
 		type = "";
 		name = "";
 		params = new LinkedHashMap<String, Field>();
 		annotations = new ArrayList<String>();
 		imports = new ArrayList<String>();
+		body = new MethodBody();
 	}
 	public Method(String modify, String type, String name, Map<String, Field> params) {
 		this();
@@ -90,11 +90,9 @@ public class Method {
 		define += ")";
 		return define;
 	}
-	public void setBody(String body) {
-		this.body = body;
-	}
 	public String getBody() {
-		return body;
+		body.append("}");
+		return body.toString();
 	}
 	public List<String> getAnnotations() {
 		return annotations;
@@ -131,5 +129,8 @@ public class Method {
 	}
 	public List<String> getImports() {
 		return imports;
+	}
+	public MethodBody getMethodBody() {
+		return body;
 	}
 }

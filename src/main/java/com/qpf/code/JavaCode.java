@@ -197,19 +197,13 @@ public class JavaCode {
 	 */
 	public void addConstructor(){
 		Method method = new Method("public", "", className, null);
-		String methodBody = "{" + newLine(1) + "super();" + newLine(-1) + "}" + newLine(0);
-		method.setBody(methodBody);
+		method.getMethodBody().append("super();");
 		addmethod(className, method);
 		
 		method = new Method("public", "", className, fields);
-		StringBuffer buf = new StringBuffer();
-		methodBody = "{" + newLine(1);
-		buf = new StringBuffer();
 		for(Field field : fields.values()){
-			buf.append("this." + field.getFieldName() + " = " + field.getFieldName() + ";" + newLine(0));
+			method.getMethodBody().append("this." + field.getFieldName() + " = " + field.getFieldName() + ";" + newLine(0));
 		}
-		methodBody += buf.toString() + newLine(-1) + "}";
-		method.setBody(methodBody);
 		addmethod(className, method);
 	}
 	
@@ -227,29 +221,24 @@ public class JavaCode {
 		for(Field field : fields.values()){
 			String name = field.getFieldName();
 			String type = JavaCodeHelper.simpleType(field.getType());
-			String methodBody = "";
 			if(name.indexOf("is") == 0){
 				Method method = new Method("public", type, name, null);
-				methodBody = "{" + newLine(1) + "return this." + name + newLine(-1) + "}";
-				method.setBody(methodBody);
+				method.getMethodBody().append("return this." + name + ";");
 				addmethod(name, method);
 				Map<String, Field> fieldTmp = new LinkedHashMap<String, Field>();
 				fieldTmp.put(name, new Field("", type, name, ""));
 				method = new Method("public", type, "set" + name.substring(2), fieldTmp);
-				methodBody = "{" + newLine(1) + "this." + name + " = " + name + ";" + newLine(-1) + "}";
-				method.setBody(methodBody);
+				method.getMethodBody().append("this." + name + " = " + name + ";");
 				addmethod(method.getName(), method);
 			}else{
 				Method method = new Method("public", type, "get" + firstUpper(name), null);
-				methodBody = "{" + newLine(1) + "return this." + name + newLine(-1) + "}";
-				method.setBody(methodBody);
+				method.getMethodBody().append("return this." + name + ";");
 				addmethod(method.getName(), method);
 				Map<String, Field> fieldTmp = new LinkedHashMap<String, Field>();
 				fieldTmp.put(name, new Field("", type, name, ""));
 				
 				method = new Method("public", type, "set" + firstUpper(name), fieldTmp);
-				methodBody = "{" + newLine(1) + "this." + name + " = " + name + ";" + newLine(-1) + "}";
-				method.setBody(methodBody);
+				method.getMethodBody().append("this." + name + " = " + name + ";");
 				addmethod(method.getName(), method);
 			}
 		}

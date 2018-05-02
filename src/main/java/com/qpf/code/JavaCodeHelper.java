@@ -35,7 +35,6 @@ public class JavaCodeHelper {
 		Field field = new Field("", "String", "fullSQL", "");
 		field.setAnnotation("org.apache.ibatis.annotations.Param(\"fullSQL\")");
 		method.addParams(field);
-		method.setBody("{}");
 		method.addAnnotations("org.apache.ibatis.annotations.SelectProvider(type = " + packageName + "." + JavaCode.firstUpper(name) + "Provider.class, method = \"selectByFullSql\")");
 		code.addmethod(method.getName(), method);
 
@@ -44,7 +43,6 @@ public class JavaCodeHelper {
 		field = new Field("", packageName + "." + JavaCode.firstUpper(name), name, "");
 		field.setAnnotation("org.apache.ibatis.annotations.Param(\"" + name + "\")");
 		method.addParams(field);
-		method.setBody("{}");
 		method.addAnnotations("org.apache.ibatis.annotations.SelectProvider(type = " + packageName + "." + JavaCode.firstUpper(name) + "Provider.class, method = \"selectUserById\")");
 		code.addmethod(method.getName(), method);
 		
@@ -53,7 +51,6 @@ public class JavaCodeHelper {
 		field = new Field("", packageName + "." + JavaCode.firstUpper(name), name, "");
 		field.setAnnotation("org.apache.ibatis.annotations.Param(\"" + name + "\")");
 		method.addParams(field);
-		method.setBody("{}");
 		method.addAnnotations("org.apache.ibatis.annotations.SelectProvider(type = " + packageName + "." + JavaCode.firstUpper(name) + "Provider.class, method = \"selectUserByBean\")");
 		code.addmethod(method.getName(), method);
 		
@@ -65,7 +62,6 @@ public class JavaCodeHelper {
 		field = new Field("", "java.lang.String", "... paramOrder", "");
 		field.setAnnotation("org.apache.ibatis.annotations.Param(\"paramOrder\")");
 		method.addParams(field);
-		method.setBody("{}");
 		method.addAnnotations("org.apache.ibatis.annotations.SelectProvider(type = " + packageName + "." + JavaCode.firstUpper(name) + "Provider.class, method = \"selectUserByConditions\")");
 		code.addmethod(method.getName(), method);
 
@@ -74,7 +70,6 @@ public class JavaCodeHelper {
 		field = new Field("", packageName + "." + JavaCode.firstUpper(name), name, "");
 		field.setAnnotation("org.apache.ibatis.annotations.Param(\"" + name + "\")");
 		method.addParams(field);
-		method.setBody("{}");
 		method.addAnnotations("org.apache.ibatis.annotations.UpdateProvider(type = " + packageName + "." + JavaCode.firstUpper(name) + "Provider.class, method = \"updateUserById\")");
 		code.addmethod(method.getName(), method);
 		
@@ -83,7 +78,6 @@ public class JavaCodeHelper {
 		field = new Field("", packageName + "." + JavaCode.firstUpper(name), name, "");
 		field.setAnnotation("org.apache.ibatis.annotations.Param(\"" + name + "\")");
 		method.addParams(field);
-		method.setBody("{}");
 		method.addAnnotations("org.apache.ibatis.annotations.DeleteProvider(type = " + packageName + "." + JavaCode.firstUpper(name) + "Provider.class, method = \"deleteUserById\")");
 		code.addmethod(method.getName(), method);
 		
@@ -92,7 +86,6 @@ public class JavaCodeHelper {
 		field = new Field("", packageName + "." + JavaCode.firstUpper(name), name, "");
 		field.setAnnotation("org.apache.ibatis.annotations.Param(\"" + name + "\")");
 		method.addParams(field);
-		method.setBody("{}");
 		method.addAnnotations("org.apache.ibatis.annotations.DeleteProvider(type = " + packageName + "." + JavaCode.firstUpper(name) + "Provider.class, method = \"insertUser\")");
 		code.addmethod(method.getName(), method);
 		
@@ -104,29 +97,75 @@ public class JavaCodeHelper {
 		code = new JavaCode(packageName + "." + name + "Provider", false, desc + "Provider");
 		code.addFields("private", "java.lang.String", "realTableName", null);
 		code.addFields("private", "java.util.List<java.lang.String>", "columns", "new java.util.ArrayList<java.lang.String>()");
+		// 构造函数
 		method = new Method("public", "", code.getClassName(), null);
-		int indent = 1;
-		StringBuffer buf = new StringBuffer("{" + newLine(++indent, System.lineSeparator()));
-		buf.append("realTableName = '" + name + "';" + newLine(indent, System.lineSeparator()));
 		code.importGenericity("java.lang.reflect.Field");
-		buf.append("Field[] fields = " + packageName + "." + JavaCode.firstUpper(name) + ".class.getDeclaredFields();" + JavaCode.firstUpper(name) + ";" + newLine(indent, System.lineSeparator()));
-		buf.append("for (Field field : fields){" + newLine(++indent, System.lineSeparator()));
-		buf.append("columns.add(field.getName().toUpperCase());" + newLine(--indent, System.lineSeparator()));
-		buf.append("}" + newLine(--indent, System.lineSeparator()));
-		buf.append(newLine(indent, System.lineSeparator()) + "}");
-		method.setBody(buf.toString());
+		method.getMethodBody().append("realTableName = '" + name + "';");
+		method.getMethodBody().append("Field[] fields = " + JavaCode.firstUpper(name) + ".class.getDeclaredFields();");
+		method.getMethodBody().append("for (Field field : fields){");
+		method.getMethodBody().append("columns.add(field.getName().toUpperCase());");
+		method.getMethodBody().append("}");
 		code.addmethod(method.getName(), method);
-		
+
+		// selectByFullSql
 		method = new Method("public", "java.lang.String", "selectByFullSql", null);
 		field = new Field("", "java.util.Map<java.lang.String, java.lang.String>", "map", null);
 		method.addParams(field);
-		indent = 1;
-		buf = new StringBuffer("{" + newLine(++indent, System.lineSeparator()));
-		buf.append("String sql = map.get(\"fullSQL\");" + newLine(indent, System.lineSeparator()));
-		buf.append("return sql;" + newLine(--indent, System.lineSeparator()));
-		buf.append("}" + newLine(--indent, System.lineSeparator()));
-		method.setBody(buf.toString());
+		method.getMethodBody().append("String sql = map.get(\"fullSQL\");");
+		method.getMethodBody().append("return sql;");
 		code.addmethod(method.getName(), method);
+
+		// selectUserById
+		method = new Method("public", "java.lang.String", "selectUserById", null);
+		field = new Field("", "java.util.Map<java.lang.String, java.lang.String>", "map", null);
+		method.addParams(field);
+		code.importGenericity("org.apache.ibatis.jdbc.SQL");
+		method.getMethodBody().append("SQLg sql = new SQL();");
+		method.getMethodBody().append(JavaCode.firstUpper(name) + " " + name + " = (" + JavaCode.firstUpper(name) + ")map.get(realTableName);");
+		method.getMethodBody().append("sql.SELECT(\"*\").FROM(realTableName).WHERE(\"ID = '\" + " + name + ".getId() + \"'\");");
+		method.getMethodBody().append("return sql.toString();");
+		code.addmethod(method.getName(), method);
+		
+		// getConditionsByBean
+		method = new Method("public", "java.util.List<java.lang.String>", "getConditionsByBean", null);
+		field = new Field("", "Object", "obj", null);
+		method.addParams(field);
+		method.getMethodBody().append("List<String> conditions = new ArrayList<String>();");
+		method.getMethodBody().append("try{");
+		method.getMethodBody().append("for (String column : columns){");
+		method.getMethodBody().append("String getter = new StringBuffer(\"get\").append(column.substring(0, 1).toUpperCase()).append(column.substring(1)).toString();");
+		code.importGenericity("java.lang.reflect.Method");
+		method.getMethodBody().append("Method method = " + JavaCode.firstUpper(name) + ".class.getMethod(getter);");
+		method.getMethodBody().append("Object invoke = method.invoke(obj);");
+		method.getMethodBody().append("if(invoke != null){");
+		method.getMethodBody().append("conditions.add(column.toUpperCase() + \" = '\" + invoke + \"'\");");
+		method.getMethodBody().append("}");
+		method.getMethodBody().append("}");
+		method.getMethodBody().append("} catch (Exception e) {");
+		method.getMethodBody().append("e.printStackTrace();");
+		method.getMethodBody().append("}");
+		method.getMethodBody().append("return sql.toString();");
+		code.addmethod(method.getName(), method);
+		
+		// selectUserByBean
+		method = new Method("public", "java.lang.String", "selectUserByBean", null);
+		field = new Field("", "java.util.Map<java.lang.String, java.lang.String>", "map", null);
+		method.addParams(field);
+		code.importGenericity("org.apache.ibatis.jdbc.SQL");
+		method.getMethodBody().append("SQLg sql = new SQL();");
+		method.getMethodBody().append(JavaCode.firstUpper(name) + " " + name + " = (" + JavaCode.firstUpper(name) + ")map.get(realTableName);");
+		method.getMethodBody().append("sql.SELECT(\"*\").FROM(realTableName);");
+		method.getMethodBody().append("List<String> conditions = getConditionsByBean(user);");
+		method.getMethodBody().append("for(int i = 0, l = conditions.size(); i < l; i++){");
+		method.getMethodBody().append("if(i < l - 1) {");
+		method.getMethodBody().append("sql.WHERE(conditions.get(i)).AND();");
+		method.getMethodBody().append("} else {");
+		method.getMethodBody().append("sql.WHERE(conditions.get(i));");
+		method.getMethodBody().append("}");
+		method.getMethodBody().append("}");
+		method.getMethodBody().append("return sql.toString();");
+		code.addmethod(method.getName(), method);
+		
 		code.build(path);
 	}
 	public static String newLine(int indent, String NEWLINE){

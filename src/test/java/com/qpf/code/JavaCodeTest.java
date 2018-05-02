@@ -14,13 +14,14 @@ public class JavaCodeTest {
 		javaCode.addAnnotation("org.apache.ibatis.annotations.SelectProvider(type = com.qpf.model.db.UserProvider.class, method = \"selectByFullSql\")");
 		Method method = new Method("public", "void", "test", null);
 		method.addParams(new Field("", "java.lang.String", "testName", ""));
-		method.setBody("{}");
-		method.addAnnotations("org.apache.ibatis.annotations.SelectProvider(type = com.qpf.model.db.UserProvider.class, method = \"selectByFullSql\")");
+		method.getMethodBody().append("for(int i = 0; i < 10; i++){");
+		method.getMethodBody().append("Sysytem.out.println(i);");
+		method.getMethodBody().append("}");
 		javaCode.addmethod(method.getName(), method);
 		String res = javaCode.build();
 		System.out.println(res);
-		System.out.println(System.getProperty("user.dir"));
-		javaCode.build(System.getProperty("user.dir"));
+//		System.out.println(System.getProperty("user.dir"));
+//		javaCode.build(System.getProperty("user.dir"));
 	}
 	
 	@Test
