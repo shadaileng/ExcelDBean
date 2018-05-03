@@ -117,7 +117,7 @@ public class JavaCodeHelper {
 
 		// selectUserById
 		method = new Method("public", "java.lang.String", "selectUserById", null);
-		field = new Field("", "java.util.Map<java.lang.String, java.lang.String>", "map", null);
+		field = new Field("", "java.util.Map<java.lang.String, Object>", "map", null);
 		method.addParams(field);
 		code.importGenericity("org.apache.ibatis.jdbc.SQL");
 		method.getMethodBody().append("SQLg sql = new SQL();");
@@ -149,9 +149,8 @@ public class JavaCodeHelper {
 		
 		// selectUserByBean
 		method = new Method("public", "java.lang.String", "selectUserByBean", null);
-		field = new Field("", "java.util.Map<java.lang.String, java.lang.String>", "map", null);
+		field = new Field("", "java.util.Map<java.lang.String, Object>", "map", null);
 		method.addParams(field);
-		code.importGenericity("org.apache.ibatis.jdbc.SQL");
 		method.getMethodBody().append("SQLg sql = new SQL();");
 		method.getMethodBody().append(JavaCode.firstUpper(name) + " " + name + " = (" + JavaCode.firstUpper(name) + ")map.get(realTableName);");
 		method.getMethodBody().append("sql.SELECT(\"*\").FROM(realTableName);");
@@ -163,6 +162,66 @@ public class JavaCodeHelper {
 		method.getMethodBody().append("sql.WHERE(conditions.get(i));");
 		method.getMethodBody().append("}");
 		method.getMethodBody().append("}");
+		method.getMethodBody().append("return sql.toString();");
+		code.addmethod(method.getName(), method);
+
+		// selectUserByBean
+		method = new Method("public", "java.lang.String", "selectUserByConditions", null);
+		field = new Field("", "java.util.Map<java.lang.String, Object>", "map", null);
+		method.addParams(field);
+		method.getMethodBody().append("SQLg sql = new SQL();");
+		method.getMethodBody().append("Object paramWhere =  map.get(\"paramWhere\");");
+		method.getMethodBody().append("Object paramOrder =  map.get(\"paramOrder\");");
+		method.getMethodBody().append("sql.SELECT(\"*\").FROM(realTableName);");
+		method.getMethodBody().append("if(paramWhere != null){");
+		method.getMethodBody().append("sql.WHERE((String) paramWhere);");
+		method.getMethodBody().append("}");
+		method.getMethodBody().append("if(paramOrder != null){");
+		method.getMethodBody().append("for(String order : (String[])paramOrder) {");
+		method.getMethodBody().append("sql.ORDER_BY(order);");
+		method.getMethodBody().append("}");
+		method.getMethodBody().append("}");
+		method.getMethodBody().append("return sql.toString();");
+		code.addmethod(method.getName(), method);
+		
+		// updateUserById
+		method = new Method("public", "java.lang.String", "updateUserById", null);
+		field = new Field("", "java.util.Map<java.lang.String, Object>", "map", null);
+		method.addParams(field);
+		method.getMethodBody().append("SQLg sql = new SQL();");
+		method.getMethodBody().append("Object " + name + " = (" + JavaCode.firstUpper(name) + ")map.get(" + name + ");");
+		method.getMethodBody().append("sql.UPDATE(realTableName).WHERE(\"ID = '\" + user.getId() + \"'\");");
+		method.getMethodBody().append("List<String> sets = getConditionsByBean(user);");
+		method.getMethodBody().append("for (String set : sets){");
+		method.getMethodBody().append("sql.SET(set);");
+		method.getMethodBody().append("}");
+
+		method.getMethodBody().append("return sql.toString();");
+		code.addmethod(method.getName(), method);
+		
+		// deleteUserById
+		method = new Method("public", "java.lang.String", "deleteUserById", null);
+		field = new Field("", "java.util.Map<java.lang.String, Object>", "map", null);
+		method.addParams(field);
+		method.getMethodBody().append("SQLg sql = new SQL();");
+		method.getMethodBody().append("Object " + name + " = map.get(realTableName);");
+		method.getMethodBody().append("sql.DELETE_FROM(realTableName).WHERE(\"ID = '\" + ((User)user).getId() + \"'\");");
+
+		method.getMethodBody().append("return sql.toString();");
+		code.addmethod(method.getName(), method);
+		
+		// insertUser
+		method = new Method("public", "java.lang.String", "insertUser", null);
+		field = new Field("", "java.util.Map<java.lang.String, Object>", "map", null);
+		method.addParams(field);
+		method.getMethodBody().append("SQLg sql = new SQL();");
+		method.getMethodBody().append("Object " + name + " = map.get(realTableName);");
+		method.getMethodBody().append("sql.INSERT_INTO(realTableName);");
+		method.getMethodBody().append("for(String str : columns){");
+		method.getMethodBody().append("String[] strs = str.splte(\" = \");");
+		method.getMethodBody().append("sql.VALUES(strs[0], strs[1]);");
+		method.getMethodBody().append("}");
+
 		method.getMethodBody().append("return sql.toString();");
 		code.addmethod(method.getName(), method);
 		
